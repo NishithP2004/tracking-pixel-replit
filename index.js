@@ -44,28 +44,28 @@ app.get("/image", async (req, res) => {
 
   } else {
     db.get("data")
-      .then(value => {
+      .then(async value => {
         data = value;
         let log = {
-          "IP": ip,
-          "Email Client": client,
+          "IP": ip || "",
+          "Email Client": client || "",
           "Date": new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' }),
           "Device": {
             name: `${device.device.vendor || ""} ${device.device.model || ""} ${device.device.type || ""}`,
-            os: `${device.os.name} ${device.os.version}`,
-            browser: `${device.browser.name} ${device.browser.version}`,
-            engine: `${device.engine.name} ${device.engine.version}`,
-            cpu: device.cpu.architecture
+            os: `${device.os.name || ""} ${device.os.version || ""}`,
+            browser: `${device.browser.name || ""} ${device.browser.version || ""}`,
+            engine: `${device.engine.name || ""} ${device.engine.version || ""}`,
+            cpu: device.cpu.architecture || ""
           }
         }
         data[hash]["Logs"].push(log)
         data[hash]["Total Clicks"] = data[hash]["Total Clicks"] + 1;
 
-        /* await fetch(process.env.WEBHOOK_URL + "/email-tracker", {
+        await fetch(process.env.WEBHOOK_URL, {
           method: "POST",
           body: JSON.stringify(data[hash]),
-          headers: {'Content-Type': 'application/json'}
-        }) */
+          headers: { 'Content-Type': 'application/json' }
+        })
 
         db.set("data", data)
           .then(() => {
