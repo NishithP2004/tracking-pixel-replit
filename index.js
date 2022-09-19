@@ -9,7 +9,7 @@ const db = new Database();
 var data = {};
 var parser = new UAParser();
 
-const app = express();
+const app = express({ urlEncoded: true });
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
@@ -27,7 +27,7 @@ app.get("/image", async (req, res) => {
   let ip = req.headers["x-forwarded-for"], client = req.headers["x-requested-with"];
   let device = parser.getResult();
 
-  if (checkIfNew(hash) == true) {
+  if (await checkIfNew(hash) == true) {
     let temp = {
       "Subject": subject,
       "Email": email,
@@ -108,24 +108,27 @@ app.delete("/data/:hash?", (req, res) => {
       if (req.params.hash) {
         delete data[req.params.hash]
         db.set("data", data)
-        .then(() => {
-          res.status(200).json({
-            success: true,
-            hash: req.params.hash,
+          .then(() => {
+            res.status(200).json({
+              success: true,
+              hash: req.params.hash,
+            })
           })
-        })
       } else {
         res.status(200).json({
-          error: "Please provide a valid hash"})
+          error: "Please provide a valid hash"
+        })
       }
     })
 })
 
-function checkIfNew(hash) {
-  let bool = false;
-  db.get("data").then(value => {
-    data = value;
-    bool = data.hasOwnProperty(hash)
+app.post("/validate/:hash", async (req, res) => {
+  res.status(200).json({
+    hash: req.params.hash,
+    valid: (await checkIfNew(req.params.hash))
   })
-    return bool
+})
+
+async function checkIfNew(hash) {
+  return !(await db.get("data")).hasOwnProperty(hash)
 }
